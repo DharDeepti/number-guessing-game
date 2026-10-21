@@ -1,0 +1,6 @@
+
+.venv/
+__pycache__/
+*.pyc
+game_scores.db
+.streamlit/secrets.toml
