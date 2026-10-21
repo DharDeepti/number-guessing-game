@@ -44,7 +44,6 @@ def register_user(username):
                 "INSERT INTO users (username) VALUES (?)",
                 (username,)
             )
-
         return True, "Registration successful!"
 
     except sqlite3.IntegrityError:
@@ -102,7 +101,7 @@ for key, value in defaults.items():
 
 st.title("🎯 Number Guessing Game")
 st.write("Guess the secret number between 1 and 100.")
-st.caption("Unlimited guesses • Earn 50 points for a first-guess win!")
+st.caption("Unlimited guesses • Maximum 50 points per game")
 
 if st.session_state.username is None:
 
@@ -205,33 +204,29 @@ if st.session_state.game_active:
         submitted = st.form_submit_button("Submit Guess")
 
     if submitted:
-
         if guess is not None:
             guess = int(guess)
 
             st.session_state.guesses.append(guess)
             st.session_state.attempts += 1
 
-            if guess == st.session_state.secret_number:
+           if guess == st.session_state.secret_number:
 
-                # 50 points for winning.
-                # Lose 5 points for each incorrect guess.
-                # Minimum winning score is 10 points.
+    # 50 points for the first guess.
+    # Deduct 5 points for each additional attempt.
+    # Minimum score is 10 points.
 
-                incorrect_guesses = st.session_state.attempts - 1
-
-                st.session_state.score = max(
-                    50 - incorrect_guesses * 5,
-                    10
-                )
+    st.session_state.score = max(
+        50 - (st.session_state.attempts - 1) * 5,
+        10
+    )
 
                 st.session_state.game_over = True
                 st.session_state.game_active = False
 
             st.rerun()
 
-
-    # ---------- GUESSING HISTORY ----------
+    # Display guessing history with numbering starting from 1
 
     if st.session_state.guesses:
 
@@ -275,18 +270,9 @@ if st.session_state.game_over and not st.session_state.saved_this_game:
             st.session_state.username
         ))
 
-        row = conn.execute("""
-            SELECT total_score, recent_score, games_played
-            FROM users
-            WHERE username = ?
-        """, (st.session_state.username,)).fetchone()
-
-    # Reload saved values from the database.
-
-    st.session_state.total_score = row[0]
-    st.session_state.recent_score = row[1]
-    st.session_state.games_played = row[2]
-
+    st.session_state.total_score += score
+    st.session_state.recent_score = score
+    st.session_state.games_played += 1
     st.session_state.score_history.append(score)
     st.session_state.saved_this_game = True
 
@@ -295,24 +281,25 @@ if st.session_state.game_over and not st.session_state.saved_this_game:
 
 if st.session_state.game_over:
 
-    st.subheader("🏁 Game Summary")
+    st.subheader("Game Summary")
 
     st.success(
-        f"You guessed correctly! You earned "
-        f"{st.session_state.score} points!"
+        f"You guessed correctly! Score: {st.session_state.score}"
     )
 
-    st.write("### Your guesses")
+    st.write("Your guesses:")
+
+    # Number the guesses starting from 1 in the summary too
 
     for index, number in enumerate(
         st.session_state.guesses, start=1
     ):
         st.write(f"{index}. {number}")
 
-    st.metric("Score earned this game", st.session_state.score)
-    st.metric("Recent score", st.session_state.recent_score)
-    st.metric("Total score", st.session_state.total_score)
-    st.metric("Games played", st.session_state.games_played)
+    st.write("Recent score:", st.session_state.recent_score)
+    st.write("Total score:", st.session_state.total_score)
+    st.write("Games played:", st.session_state.games_played)
+    st.write("Session score history:", st.session_state.score_history)
 
     if st.button("Play Again", type="primary"):
         reset_game()
@@ -336,12 +323,11 @@ if rows:
     st.dataframe(
         [
             {
-                "Rank": index,
                 "Username": row[0],
                 "Total Score": row[1],
                 "Games Played": row[2]
             }
-            for index, row in enumerate(rows, start=1)
+            for row in rows
         ],
         hide_index=True,
         use_container_width=True
