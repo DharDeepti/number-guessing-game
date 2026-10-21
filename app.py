@@ -1,4 +1,4 @@
-
+```python
 import random
 import sqlite3
 import streamlit as st
@@ -66,6 +66,7 @@ def login_user(username):
     st.session_state.total_score = row[1]
     st.session_state.recent_score = row[2]
     st.session_state.games_played = row[3]
+
     return True
 
 
@@ -130,7 +131,9 @@ if st.session_state.username is None:
             if login_user(entered_username):
                 st.rerun()
             else:
-                st.error("Username not found. Please register first.")
+                st.error(
+                    "Username not found. Please register first."
+                )
 
     st.stop()
 
@@ -140,6 +143,7 @@ if st.session_state.username is None:
 st.subheader(f"Welcome, {st.session_state.username}!")
 
 col1, col2, col3 = st.columns(3)
+
 col1.metric("Total score", st.session_state.total_score)
 col2.metric("Recent score", st.session_state.recent_score)
 col3.metric("Games played", st.session_state.games_played)
@@ -160,12 +164,14 @@ if st.button("Logout"):
         st.session_state[key] = (
             value.copy() if isinstance(value, list) else value
         )
+
     st.rerun()
 
 
 # ---------- 6. START GAME ----------
 
 if not st.session_state.game_active and not st.session_state.game_over:
+
     if st.button("Start Game", type="primary"):
         st.session_state.secret_number = random.randint(1, 100)
         st.session_state.guesses = []
@@ -173,16 +179,16 @@ if not st.session_state.game_active and not st.session_state.game_over:
         st.session_state.score = 0
         st.session_state.game_active = True
         st.session_state.saved_this_game = False
-        st.rerun()
 
+        st.rerun()
 
 
 # ---------- 7. GUESSING LOGIC ----------
 
 if st.session_state.game_active:
+
     st.subheader("Make your guess")
 
-    # Show the number of attempts already used
     st.write(f"Attempts used: {st.session_state.attempts}")
 
     with st.form("guess_form"):
@@ -198,28 +204,39 @@ if st.session_state.game_active:
         submitted = st.form_submit_button("Submit Guess")
 
     if submitted:
-        guess = int(guess)
-        st.session_state.guesses.append(guess)
-        st.session_state.attempts += 1
+        if guess is not None:
+            guess = int(guess)
 
-        if guess == st.session_state.secret_number:
-            # 50 points for the first guess.
-            # Lose 10 points for each additional guess.
-            # Minimum score is 0.
-            st.session_state.score = max(
-                50 - (st.session_state.attempts - 1) * 10,
-                0
-            )
+            st.session_state.guesses.append(guess)
+            st.session_state.attempts += 1
 
-            st.session_state.game_over = True
-            st.session_state.game_active = False
+            if guess == st.session_state.secret_number:
 
-        st.rerun()
+                # 50 points for the first guess.
+                # Lose 10 points for each additional guess.
+                # Minimum score is 0.
 
-    # Display all guessed numbers
+                st.session_state.score = max(
+                    50 - (st.session_state.attempts - 1) * 10,
+                    0
+                )
+
+                st.session_state.game_over = True
+                st.session_state.game_active = False
+
+            st.rerun()
+
+    # Display guessing history with numbering starting from 1
+
     if st.session_state.guesses:
-        st.write("### Your guessing history")
-        st.write("Numbers guessed:", st.session_state.guesses)
+
+        st.subheader("Your guessing history")
+        st.write("Numbers guessed:")
+
+        for index, number in enumerate(
+            st.session_state.guesses, start=1
+        ):
+            st.write(f"{index}. {number}")
 
         last_guess = st.session_state.guesses[-1]
 
@@ -227,6 +244,7 @@ if st.session_state.game_active:
             st.success("Correct guess!")
 
         elif st.session_state.game_active:
+
             if last_guess < st.session_state.secret_number:
                 st.warning("Too low! Guess higher.")
             else:
@@ -262,13 +280,22 @@ if st.session_state.game_over and not st.session_state.saved_this_game:
 # ---------- 9. GAME SUMMARY ----------
 
 if st.session_state.game_over:
+
     st.subheader("Game Summary")
 
     st.success(
         f"You guessed correctly! Score: {st.session_state.score}"
     )
 
-    st.write("Your guesses:", st.session_state.guesses)
+    st.write("Your guesses:")
+
+    # Number the guesses starting from 1 in the summary too
+
+    for index, number in enumerate(
+        st.session_state.guesses, start=1
+    ):
+        st.write(f"{index}. {number}")
+
     st.write("Recent score:", st.session_state.recent_score)
     st.write("Total score:", st.session_state.total_score)
     st.write("Games played:", st.session_state.games_played)
@@ -290,6 +317,7 @@ with get_connection() as conn:
         FROM users
         ORDER BY total_score DESC, username ASC
     """).fetchall()
+
 
 if rows:
     st.dataframe(
