@@ -1,4 +1,4 @@
-```python
+
 import random
 import sqlite3
 import streamlit as st
