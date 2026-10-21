@@ -12,7 +12,6 @@ st.set_page_config(
 )
 
 DB_NAME = "game_scores.db"
-ATTEMPT_SCORES = [50, 40, 30, 20, 10]
 
 
 # ---------- 2. DATABASE SETUP ----------
@@ -101,7 +100,7 @@ for key, value in defaults.items():
 
 st.title("🎯 Number Guessing Game")
 st.write("Guess the secret number between 1 and 100.")
-st.caption("Five attempts • Maximum 50 points per game")
+st.caption("Unlimited guesses • Maximum 50 points per game")
 
 if st.session_state.username is None:
 
@@ -114,6 +113,7 @@ if st.session_state.username is None:
 
         if register_clicked:
             success, message = register_user(new_username)
+
             if success:
                 login_user(new_username)
                 st.success(message)
@@ -180,7 +180,8 @@ if not st.session_state.game_active and not st.session_state.game_over:
 
 if st.session_state.game_active:
     st.subheader("Make your guess")
-    st.write(f"Attempt {st.session_state.attempts + 1} of 5")
+
+    # Attempt numbers are tracked internally but never displayed.
 
     with st.form("guess_form"):
         guess = st.number_input(
@@ -189,8 +190,9 @@ if st.session_state.game_active:
             max_value=100,
             value=None,
             step=1,
-            placeholder="Enter your Number"
+            placeholder="Enter your number"
         )
+
         submitted = st.form_submit_button("Submit Guess")
 
     if submitted:
@@ -199,26 +201,25 @@ if st.session_state.game_active:
         st.session_state.attempts += 1
 
         if guess == st.session_state.secret_number:
-            st.session_state.score = ATTEMPT_SCORES[
-                st.session_state.attempts - 1
-            ]
-            st.session_state.game_over = True
-            st.session_state.game_active = False
+            # 50 points for the first guess.
+            # Lose 10 points for each incorrect guess.
+            # The minimum score is 0.
+            st.session_state.score = max(
+                50 - (st.session_state.attempts - 1) * 10,
+                0
+            )
 
-        elif st.session_state.attempts == 5:
-            st.session_state.score = 0
             st.session_state.game_over = True
             st.session_state.game_active = False
 
         st.rerun()
 
     if st.session_state.guesses:
-        st.write("Your guesses:", st.session_state.guesses)
-
         last_guess = st.session_state.guesses[-1]
 
         if last_guess == st.session_state.secret_number:
             st.success("Correct guess!")
+
         elif st.session_state.game_active:
             if last_guess < st.session_state.secret_number:
                 st.warning("Too low! Guess higher.")
@@ -257,15 +258,11 @@ if st.session_state.game_over and not st.session_state.saved_this_game:
 if st.session_state.game_over:
     st.subheader("Game Summary")
 
-    if st.session_state.score > 0:
-        st.success(f"You guessed correctly! Score: {st.session_state.score}")
-    else:
-        st.error(
-            f"Game over! The number was "
-            f"{st.session_state.secret_number}."
-        )
+    st.success(
+        f"You guessed correctly! Score: {st.session_state.score}"
+    )
 
-    st.write("Guesses:", st.session_state.guesses)
+    st.write("Your guesses:", st.session_state.guesses)
     st.write("Recent score:", st.session_state.recent_score)
     st.write("Total score:", st.session_state.total_score)
     st.write("Games played:", st.session_state.games_played)
