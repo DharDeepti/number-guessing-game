@@ -189,7 +189,7 @@ if st.session_state.game_active:
             max_value=100,
             value=None,
             step=1,
-            Placeholder="Enter your Number"
+            placeholder="Enter your Number"
         )
         submitted = st.form_submit_button("Submit Guess")
 
