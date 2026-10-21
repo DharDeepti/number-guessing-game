@@ -176,12 +176,14 @@ if not st.session_state.game_active and not st.session_state.game_over:
         st.rerun()
 
 
+
 # ---------- 7. GUESSING LOGIC ----------
 
 if st.session_state.game_active:
     st.subheader("Make your guess")
 
-    # Attempt numbers are tracked internally but never displayed.
+    # Show the number of attempts already used
+    st.write(f"Attempts used: {st.session_state.attempts}")
 
     with st.form("guess_form"):
         guess = st.number_input(
@@ -202,8 +204,8 @@ if st.session_state.game_active:
 
         if guess == st.session_state.secret_number:
             # 50 points for the first guess.
-            # Lose 10 points for each incorrect guess.
-            # The minimum score is 0.
+            # Lose 10 points for each additional guess.
+            # Minimum score is 0.
             st.session_state.score = max(
                 50 - (st.session_state.attempts - 1) * 10,
                 0
@@ -214,7 +216,11 @@ if st.session_state.game_active:
 
         st.rerun()
 
+    # Display all guessed numbers
     if st.session_state.guesses:
+        st.write("### Your guessing history")
+        st.write("Numbers guessed:", st.session_state.guesses)
+
         last_guess = st.session_state.guesses[-1]
 
         if last_guess == st.session_state.secret_number:
